@@ -1,0 +1,362 @@
+作者：范宜坚
+
+注意：1.本文档针对的安装包只在64位CentOS 6.3操作系统测试通过！
+      2.更加系统的安装方法，请看https://github.com/alibaba/mdrill
+
+1.配置操作系统
+1.1 # vi /etc/sysconfig/network
+        修改HOSTNAME=master.mdrill.com
+
+1.2 # vi /etc/hosts
+        增加192.168.1.8 master.mdrill.com
+
+1.3 # vi /etc/selinux/config
+        修改SELINUX=disabled
+
+1.4 配置好yum(/etc/yum.repos.d) 注：非常重要，很多软件都是基于yum安装
+
+1.5 设置无密码登录
+    # ssh-keygen -t rsa
+    # mv /root/.ssh/id_rsa.pub /root/.ssh/authorized_keys
+    # ssh master.chinaj.com uptime  注：测试配置是否正确，建议一定要执行
+
+1.6 安装java
+    # yum install java-1.6.0-openjdk java-1.6.0-openjdk-devel
+
+1.7 增加环境变量
+    # vi /root/.bashrc
+        alias grep="grep --color=always"
+        export HADOOP_HOME=/usr/local/hadoop-0.20.2
+        export HADOOP_CONF_DIR=$HADOOP_HOME/conf
+        export JAVA_HOME=/usr/lib/jvm/java-1.6.0-openjdk-1.6.0.0.x86_64
+        export PATH=$PATH:$HADOOP_HOME/bin:$JAVA_HOME/bin:/usr/local/mdrill-0.20.9/bin
+
+    # source /root/.bashrc 注：使用环境变量生效
+
+1.8 上传src.tgz到/root，并解压到/usr/local
+    # tar zxvf /root/src.tgz -C /usr/local
+    # cd /usr/local/src
+    # tar zxvf install.tgz -C /usr/local
+    # yum localinstall zeromq-2.1.7-1.el6.x86_64.rpm jzmq-2.1.0-1.el6.x86_64.rpm
+
+    export LD_LIBRARY_PATH=/usr/local/lib
+
+source /home/mdrill/.bashrc
+
+1.9 重启服务器
+    # reboot
+
+2.配置支撑软件
+2.1 配置zookeeper
+    # vi /usr/local/zookeeper-3.4.5/conf/zoo.cfg # 下方两个参数，可以根据自己的情况进行定制
+        dataDir=/data/zookeeper
+        server.1=master.chinaj.com:2888:3888
+
+    # mkdir -p /data/zookeeper
+
+    # cd /usr/local/zookeeper-3.4.5/bin/
+    # ./zkServer.sh start
+    # ./zkServer.sh status 注：正常情况下的显示
+    JMX enabled by default
+    Using config: /usr/local/zookeeper-3.4.5/bin/../conf/zoo.cfg
+    Mode: standalone
+
+2.2 配置hadoop
+    # mkdir -p /data/hadoop
+    注：以下几个配置文件内容很简单，需要改的内容只有目录和域名
+    # vi /usr/local/hadoop-0.20.2/conf/core-site.xml
+    # vi /usr/local/hadoop-0.20.2/conf/hdfs-site.xml
+    # vi /usr/local/hadoop-0.20.2/conf/mapred-site.xml
+    # vi /usr/local/hadoop-0.20.2/conf/masters
+    # vi /usr/local/hadoop-0.20.2/conf/slaves
+
+    # hadoop namenode -format
+    # start-all.sh
+    # hadoop dfsadmin -report 注：正常情况下的显示
+    Configured Capacity: 20639866880 (19.22 GB)
+    Present Capacity: 16372936704 (15.25 GB)
+    DFS Remaining: 16372203520 (15.25 GB)
+    DFS Used: 733184 (716 KB)
+    DFS Used%: 0%
+    Under replicated blocks: 0
+    Blocks with corrupt replicas: 0
+    Missing blocks: 0
+
+    -------------------------------------------------
+    Datanodes available: 1 (1 total, 0 dead)
+
+    Name: 192.168.1.8:50010
+    Decommission Status : Normal
+    Configured Capacity: 20639866880 (19.22 GB)
+    DFS Used: 733184 (716 KB)
+    Non DFS Used: 4266930176 (3.97 GB)
+    DFS Remaining: 16372203520(15.25 GB)
+    DFS Used%: 0%
+    DFS Remaining%: 79.32%
+    Last contact: Fri Mar 07 15:06:34 CST 2014
+
+2.3 配置mdrill
+    # mkdir -p /data/disk/mdrill
+    # vi /usr/local/mdrill-0.20.9/conf/storm.yaml
+
+    # nohup ./bluewhale nimbus &
+    # nohup ./bluewhale supervisor &
+    # nohup ./bluewhale mdrillui 1107 ../lib/adhoc-web-0.18-beta.jar ./ui &
+    启动完之后，查看/usr/local/mdrill-0.20.9/logs/里面的日志，检查是否有报错。
+
+		hadoop fs -rmr /mdrill/rpt_p4padhoc_product/dt=20140306
+    hadoop fs -mkdir /mdrill/rpt_p4padhoc_product/dt=20140306
+    hadoop fs -put 001.txt /mdrill/rpt_p4padhoc_product/dt=20140306/001.txt
+    hadoop fs -put 002.txt /mdrill/rpt_p4padhoc_product/dt=20140306/002.txt
+    hadoop fs -cat /mdrill/rpt_p4padhoc_product/dt=20140306/001.txt
+    hadoop fs -cat /mdrill/rpt_p4padhoc_product/dt=20140306/002.txt
+    ./bluewhale mdrill create ./create_rpt_p4padhoc_product.sql
+    ./bluewhale mdrill index rpt_p4padhoc_product /mdrill/rpt_p4padhoc_product 3650 20140306 txt tab
+    ./bluewhale mdrill table rpt_p4padhoc_product
+    hadoop fs -ls  /mdrill/tablelist/rpt_p4padhoc_product/index
+
+    ./bluewhale mdrill drop rpt_p4padhoc_product
+3. 导入离线数据
+    # hadoop fs -mkdir /group/tbads/p4pdata/hive_data/rpt/rpt_p4padhoc_product/dt=20140306
+    # hadoop fs -put /usr/local/src/001.txt /group/tbads/p4pdata/hive_data/rpt/rpt_p4padhoc_product/dt=20140306/001.txt
+    # hadoop fs -cat /group/tbads/p4pdata/hive_data/rpt/rpt_p4padhoc_product/dt=20140306/001.txt          注：正常情况下的显示
+    20140306        子落1   test@alipay.com P4P-客户
+    20140306        子落2   test@alipay.com P4P-客户
+    20140306        子落3   test@alipay.com P4P-客户
+    20140306        子落4   test@alipay.com P4P-客户
+
+    # bluewhale mdrill create /usr/local/src/rpt_p4padhoc_product.sql       注：正常情况下的显示
+    higo execute [create, /usr/local/src/rpt_p4padhoc_product.sql]
+
+    <field name="thedate" type="string" indexed="true" stored="false"  omitTermFreqAndPositions="true" />
+    <field name="name" type="string" indexed="true" stored="false"  omitTermFreqAndPositions="true" />
+    <field name="email" type="string" indexed="true" stored="false"  omitTermFreqAndPositions="true" />
+    <field name="is_p4pvip" type="string" indexed="true" stored="false"  omitTermFreqAndPositions="true" />
+
+    create succ at /group/tbdp-etao-adhoc/p4padhoc/tablelist/rpt_p4padhoc_product
+
+    # bluewhale mdrill index rpt_p4padhoc_product /group/tbads/p4pdata/hive_data/rpt/rpt_p4padhoc_product 1 20140306 txt tab         注：正常情况下的显示
+    higo execute [index, rpt_p4padhoc_product, /group/tbads/p4pdata/hive_data/rpt/rpt_p4padhoc_product, 1, 20140306, txt, tab]
+    11111111 vertify:>>>last>>>>>current>>partionV201301008@001@201403@1@1@-1950960726@20140307@20140306@176@1@20140307_141317_657@20140307_141317_657<<<<
+    22222  vertify:201403>>>partionV201301008@001@201403@1@1@-1950960726@20140307@20140306@176@1@20140307_141317_657@20140307_141317_657<<<<
+    333333 vertify:201403>>>partionV201301008@001@201403@1@1@-1950960726@20140307@20140306@176@1@20140307_141317_657@20140307_141317_657>>>partionV201301008@001@201403@1@1@-1950960726@20140307@20140306@176@1@20140307_141317_657@20140307_141317_657>>>><<<<
+    tmpjars:/usr/local/mdrill-0.20.9/lib/adhoc-solr-0.18-beta.jar,/usr/local/mdrill-0.20.9/lib/commons-httpclient-3.0.1.jar,/usr/local/mdrill-0.20.9/lib/commons-io-1.4.jar,/usr/local/mdrill-0.20.9/lib/slf4j-api-1.5.6.jar,/usr/local/mdrill-0.20.9/lib/adhoc-public-0.18-beta.jar,/usr/local/mdrill-0.20.9/lib/adhoc-wrapper-0.18-beta.jar@@@@@file:/usr/local/mdrill-0.20.9/lib/adhoc-solr-0.18-beta.jar,file:/usr/local/mdrill-0.20.9/lib/commons-httpclient-3.0.1.jar,file:/usr/local/mdrill-0.20.9/lib/commons-io-1.4.jar,file:/usr/local/mdrill-0.20.9/lib/slf4j-api-1.5.6.jar,file:/usr/local/mdrill-0.20.9/lib/adhoc-public-0.18-beta.jar,file:/usr/local/mdrill-0.20.9/lib/adhoc-wrapper-0.18-beta.jar
+    /group/tbads/p4pdata/hive_data/rpt/rpt_p4padhoc_product/*20140306*/*
+    output:/group/tbdp-etao-adhoc/p4padhoc/tablelist/rpt_p4padhoc_product/tmp/d93727c0-d54d-46b1-a9f7-8205a90089fb/201403@*p4padhoc/tablelist/rpt_p4padhoc_product/tmp*201403
+    tmp:/group/tbdp-etao-adhoc/p4padhoc/tablelist/rpt_p4padhoc_product/tmp/d93727c0-d54d-46b1-a9f7-8205a90089fb/201403_smallIndex
+    thedate string true false
+    name string true false
+    email string true false
+    is_p4pvip string true false
+    higo_uuid tlong true true
+    14/03/07 14:13:59 INFO input.FileInputFormat: Total input paths to process : 1
+    14/03/07 14:13:59 INFO mapred.JobClient: Running job: job_201403071409_0001
+    14/03/07 14:14:00 INFO mapred.JobClient:  map 0% reduce 0%
+    14/03/07 14:14:11 INFO mapred.JobClient:  map 100% reduce 0%
+    14/03/07 14:14:26 INFO mapred.JobClient:  map 100% reduce 100%
+    ... 省略大部分
+    14/03/07 14:14:58 INFO mapred.JobClient:     Map input records=1
+    14/03/07 14:14:58 INFO mapred.JobClient:     Reduce shuffle bytes=0
+    14/03/07 14:14:58 INFO mapred.JobClient:     Reduce output records=1
+    14/03/07 14:14:58 INFO mapred.JobClient:     Spilled Records=2
+    14/03/07 14:14:58 INFO mapred.JobClient:     Map output bytes=138
+    14/03/07 14:14:58 INFO mapred.JobClient:     Combine input records=0
+    14/03/07 14:14:58 INFO mapred.JobClient:     Map output records=1
+    14/03/07 14:14:58 INFO mapred.JobClient:     Reduce input records=1
+    44444 vertify:201403>>>partionV201301008@001@201403@1@1@-1950960726@20140307@20140306@176@1@20140307_141317_657@20140307_141317_657<<<partionV201301008@001@201403@1@1@-1950960726@20140307@20140306@176@1@20140307_141317_657@20140307_141317_657<<<<
+    11111111 vertify:>>>last>>>partionV201301008@001@201403@1@1@-1950960726@20140307@20140306@176@1@20140307_141317_657@20140307_141317_657>>current>>partionV201301008@001@201403@1@1@-1950960726@20140307@20140306@176@1@20140307_141317_657@20140307_141317_657<<<<
+
+    # bluewhale mdrill table rpt_p4padhoc_product     注：正常情况下的显示
+    higo execute [table, rpt_p4padhoc_product]
+    14/03/07 14:15:33 INFO imps.CuratorFrameworkImpl: Starting
+    14/03/07 14:15:33 INFO zookeeper.ZooKeeper: Client environment:zookeeper.version=3.4.5-1392090, built on 09/30/2012 17:52 GMT
+    14/03/07 14:15:33 INFO zookeeper.ZooKeeper: Client environment:host.name=master.chinaj.com
+    14/03/07 14:15:33 INFO zookeeper.ZooKeeper: Client environment:java.version=1.6.0_24
+    ... 省略大部分
+    14/03/07 14:15:33 INFO storm.StormSubmitter: Finished submitting topology: adhoc
+    start complete
+
+4. 测试
+4.1 # service iptables stop
+
+4.2 http://192.168.1.8:1107/mdrill.jsp
+海狗数据表 --> 能够看到rpt_p4padhoc_product和adhoc;点击rpt_p4padhoc_product监控的查看，可以看到
+    进程数:2
+    总记录数=5
+    分区记录数：
+    201403=5
+    =0
+    起始分区每天记录数：
+    day:20140306@0=4
+    起始分区每天有效shard数：
+    20140306@0=1
+
+4.3 http://192.168.1.8:1107/sql.jsp 点击提交查询，能够查出数据来，则说明安装已经大功告成！
+
+
+
+scp helloworld.jar  root@172.30.37.112:/home/wuzhong/helloworld.jar
+
+scp java-1.6.0-openjdk-devel-1.6.0.0-1.57.1.11.9.el6_4.x86_64.rpm  root@192.168.18.128:/home/wuzhong
+
+
+scp 002.txt  root@172.30.37.112:/usr/local/alimama/adhoc-core
+
+
+rpm -i example.rpm 安装 example.rpm 包；
+
+rpm -iv example.rpm 安装 example.rpm 包并在安装过程中显示正在安装的文件信息；
+
+rpm -ivh example.rpm 安装 example.rpm 包并在安装过程中显示正在安装的文件信息及安装进度；
+
+
+wget http://download.zeromq.org/zeromq-2.1.7.tar.gz
+ tar zxf zeromq-2.1.7.tar.gz
+cd zeromq-2.1.10
+./configure           #--with-pgm    build libzmq with PGM extension [default=no]
+make
+make install
+
+
+
+tar -xzf alimama-adhoc.tar.gz -C /usr/local
+
+
+hadoop dfsadmin -safemode leave
+
+
+
+
+
+
+
+
+
+
+
+
+
+[root@master bin]#  ./bluewhale mdrill drop rpt_p4padhoc_product
+higo execute [drop, rpt_p4padhoc_product]
+16/03/18 11:56:05 INFO imps.CuratorFrameworkImpl: Starting
+16/03/18 11:56:05 INFO zookeeper.ZooKeeper: Client environment:zookeeper.version=3.4.5-1392090, built on 09/30/2012 17:52 GMT
+16/03/18 11:56:05 INFO zookeeper.ZooKeeper: Client environment:host.name=master.mdrill.com
+16/03/18 11:56:05 INFO zookeeper.ZooKeeper: Client environment:java.version=1.8.0_71
+16/03/18 11:56:05 INFO zookeeper.ZooKeeper: Client environment:java.vendor=Oracle Corporation
+16/03/18 11:56:05 INFO zookeeper.ZooKeeper: Client environment:java.home=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.71-1.b15.el6_7.x86_64/jre
+16/03/18 11:56:05 INFO zookeeper.ZooKeeper: Client environment:java.class.path=/usr/local/alimama/adhoc-core/lib/jasper-runtime-5.5.23.jar:/usr/local/alimama/adhoc-core/lib/adhoc-web-0.18-beta.jar:/usr/local/alimama/adhoc-core/lib/solr-commons-csv-3.5.0.jar:/usr/local/alimama/adhoc-core/lib/hiccup-0.3.6.jar:/usr/local/alimama/adhoc-core/lib/avro-ipc-1.5.0.jar:/usr/local/alimama/adhoc-core/lib/jline-0.9.94.jar:/usr/local/alimama/adhoc-core/lib/commons-lang-2.4.jar:/usr/local/alimama/adhoc-core/lib/slf4j-api-1.5.6.jar:/usr/local/alimama/adhoc-core/lib/jersey-core-1.8.jar:/usr/local/alimama/adhoc-core/lib/jsp-api-2.1-glassfish-2.1.v20091210.jar:/usr/local/alimama/adhoc-core/lib/velocity-1.6.4.jar:/usr/local/alimama/adhoc-core/lib/commons-httpclient-3.0.1.jar:/usr/local/alimama/adhoc-core/lib/adhoc-mdrill-0.18-beta.jar:/usr/local/alimama/adhoc-core/lib/jasper-compiler-5.5.23.jar:/usr/local/alimama/adhoc-core/lib/metrics-core-2.1.2.jar:/usr/local/alimama/adhoc-core/lib/jsp-api-2.1.jar:/usr/local/alimama/adhoc-core/lib/commons-fileupload-1.2.1.jar:/usr/local/alimama/adhoc-core/lib/paranamer-2.3.jar:/usr/local/alimama/adhoc-core/lib/hamcrest-core-1.1.jar:/usr/local/alimama/adhoc-core/lib/jackson-mapper-asl-1.8.8.jar:/usr/local/alimama/adhoc-core/lib/standard-1.1.2.jar:/usr/local/alimama/adhoc-core/lib/curator-client-1.1.3.jar:/usr/local/alimama/adhoc-core/lib/tools.macro-0.1.0.jar:/usr/local/alimama/adhoc-core/lib/jamon-runtime-2.3.1.jar:/usr/local/alimama/adhoc-core/lib/jruby-complete-1.6.5.jar:/usr/local/alimama/adhoc-core/lib/libthrift7-0.7.0.jar:/usr/local/alimama/adhoc-core/lib/adhoc-public-0.18-beta.jar:/usr/local/alimama/adhoc-core/lib/asm-3.2.jar:/usr/local/alimama/adhoc-core/lib/avro-1.5.0.jar:/usr/local/alimama/adhoc-core/lib/jsp-2.1-jetty-6.1.26.jar:/usr/local/alimama/adhoc-core/lib/jackson-core-asl-1.8.8.jar:/usr/local/alimama/adhoc-core/lib/activation-1.1.jar:/usr/local/alimama/adhoc-core/lib/jetty-java5-threadpool-6.1.26.jar:/usr/local/alimama/adhoc-core/lib/guava-15.0.jar:/usr/local/alimama/adhoc-core/lib/mysql-connector-java-5.1.9.jar:/usr/local/alimama/adhoc-core/lib/adhoc-realtime-0.18-beta.jar:/usr/local/alimama/adhoc-core/lib/cglib-nodep-2.1_3.jar:/usr/local/alimama/adhoc-core/lib/clojure-1.2.0.jar:/usr/local/alimama/adhoc-core/lib/commons-digester-1.8.jar:/usr/local/alimama/adhoc-core/lib/adhoc-jdbc-0.18-beta.jar:/usr/local/alimama/adhoc-core/lib/minlog-1.2.jar:/usr/local/alimama/adhoc-core/lib/commons-beanutils-1.7.0.jar:/usr/local/alimama/adhoc-core/lib/zookeeper-3.4.5.jar:/usr/local/alimama/adhoc-core/lib/hbase-0.94.15-cdh4.6.0.jar:/usr/local/alimama/adhoc-core/lib/curator-framework-1.1.3.jar:/usr/local/alimama/adhoc-core/lib/jackson-xc-1.8.8.jar:/usr/local/alimama/adhoc-core/lib/commons-el-1.0.jar:/usr/local/alimama/adhoc-core/lib/commons-io-1.4.jar:/usr/local/alimama/adhoc-core/lib/libthrift-0.7.0.jar:/usr/local/alimama/adhoc-core/lib/json-simple-1.1.jar:/usr/local/alimama/adhoc-core/lib/clout-0.4.1.jar:/usr/local/alimama/adhoc-core/lib/jsf-impl-2.1.7.jar:/usr/local/alimama/adhoc-core/lib/servlet-api-2.5.jar:/usr/local/alimama/adhoc-core/lib/protobuf-java-2.4.0a.jar:/usr/local/alimama/adhoc-core/lib/commons-beanutils-core-1.8.0.jar:/usr/local/alimama/adhoc-core/lib/oro-2.0.8.jar:/usr/local/alimama/adhoc-core/lib/httpclient-4.1.1.jar:/usr/local/alimama/adhoc-core/lib/reflectasm-1.01.jar:/usr/local/alimama/adhoc-core/lib/adhoc-solr-0.18-beta.jar:/usr/local/alimama/adhoc-core/lib/netty-3.2.4.Final.jar:/usr/local/alimama/adhoc-core/lib/commons-cli-1.1.jar:/usr/local/alimama/adhoc-core/lib/jackson-jaxrs-1.8.8.jar:/usr/local/alimama/adhoc-core/lib/commons-collections-3.2.1.jar:/usr/local/alimama/adhoc-core/lib/jetty-util-6.1.26.jar:/usr/local/alimama/adhoc-core/lib/jettison-1.1.jar:/usr/local/alimama/adhoc-core/lib/hadoop-core-0.20.2.jar:/usr/local/alimama/adhoc-core/lib/slf4j-log4j12-1.5.6.jar:/usr/local/alimama/adhoc-core/lib/commons-codec-1.5.jar:/usr/local/alimama/adhoc-core/lib/jstl-1.1.2.jar:/usr/local/alimama/adhoc-core/lib/jaxb-impl-2.2.3-1.jar:/usr/local/alimama/adhoc-core/lib/adhoc-core-0.18-beta.jar:/usr/local/alimama/adhoc-core/lib/log4j-1.2.16.jar:/usr/local/alimama/adhoc-core/lib/httpcore-4.1.jar:/usr/local/alimama/adhoc-core/lib/commons-logging-1.1.1.jar:/usr/local/alimama/adhoc-core/lib/jetty-6.1.26.jar:/usr/local/alimama/adhoc-core/lib/carbonite-1.0.0.jar:/usr/local/alimama/adhoc-core/lib/adhoc-wrapper-0.18-beta.jar:/usr/local/alimama/adhoc-core/lib/ant-1.6.5.jar:/usr/local/alimama/adhoc-core/lib/jaxb-api-2.1.jar:/usr/local/alimama/adhoc-core/lib/netty-3.6.6.Final.jar:/usr/local/alimama/adhoc-core/lib/commons-exec-1.1.jar:/usr/local/alimama/adhoc-core/lib/compojure-0.6.4.jar:/usr/local/alimama/adhoc-core/lib/servlet-api-2.5-6.1.14.jar:/usr/local/alimama/adhoc-core/lib/stax-api-1.0.1.jar:/usr/local/alimama/adhoc-core/lib/junit-4.10.jar:/usr/local/alimama/adhoc-core/lib/jsp-api-2.1-6.1.11.jar:/usr/local/alimama/adhoc-core/lib/servlet-api-2.5-20081211.jar:/usr/local/alimama/adhoc-core/lib/core-3.1.1.jar:/usr/local/alimama/adhoc-core/lib/high-scale-lib-1.1.1.jar:/usr/local/alimama/adhoc-core/lib/jersey-server-1.8.jar:/usr/local/alimama/adhoc-core/lib/jsf-api-2.1.7.jar:/usr/local/alimama/adhoc-core/lib/ring-core-0.3.10.jar:/usr/local/alimama/adhoc-core/lib/snakeyaml-1.9.jar:/usr/local/alimama/adhoc-core/lib/jersey-json-1.8.jar:/usr/local/alimama/adhoc-core/lib/commons-configuration-1.6.jar:/usr/local/alimama/adhoc-core/lib/core.incubator-0.1.0.jar:/usr/local/alimama/adhoc-core/lib/jsp-2.1-6.1.11.jar:/usr/local/alimama/adhoc-core/lib/jsp-2.1-glassfish-2.1.v20091210.jar:/usr/local/alimama/adhoc-core/lib/jzmq-2.1.0.jar:/usr/local/alimama/adhoc-core/lib/kryo-1.04.jar:/usr/local/alimama/adhoc-core/lib/ganymed-ssh2-build210.jar:/usr/local/alimama/adhoc-core/bin/mdrill.jar:/usr/local/alimama/adhoc-core/conf:/usr/local/alimama/adhoc-core/bin
+16/03/18 11:56:05 INFO zookeeper.ZooKeeper: Client environment:java.library.path=/usr/local/lib:/opt/local/lib:/usr/lib
+16/03/18 11:56:05 INFO zookeeper.ZooKeeper: Client environment:java.io.tmpdir=/tmp
+16/03/18 11:56:05 INFO zookeeper.ZooKeeper: Client environment:java.compiler=<NA>
+16/03/18 11:56:05 INFO zookeeper.ZooKeeper: Client environment:os.name=Linux
+16/03/18 11:56:05 INFO zookeeper.ZooKeeper: Client environment:os.arch=amd64
+16/03/18 11:56:05 INFO zookeeper.ZooKeeper: Client environment:os.version=2.6.32-279.el6.x86_64
+16/03/18 11:56:05 INFO zookeeper.ZooKeeper: Client environment:user.name=root
+16/03/18 11:56:05 INFO zookeeper.ZooKeeper: Client environment:user.home=/root
+16/03/18 11:56:05 INFO zookeeper.ZooKeeper: Client environment:user.dir=/usr/local/alimama/adhoc-core/bin
+16/03/18 11:56:05 INFO zookeeper.ZooKeeper: Initiating client connection, connectString=master.mdrill.com:2181 sessionTimeout=20000 watcher=com.netflix.curator.ConnectionState@3b07a0d6
+16/03/18 11:56:05 INFO zookeeper.ClientCnxn: Opening socket connection to server master.mdrill.com/172.30.37.73:2181. Will not attempt to authenticate using SASL (unknown error)
+16/03/18 11:56:05 INFO zookeeper.ClientCnxn: Socket connection established to master.mdrill.com/172.30.37.73:2181, initiating session
+16/03/18 11:56:05 INFO zookeeper.ClientCnxn: Session establishment complete on server master.mdrill.com/172.30.37.73:2181, sessionid = 0x1538a1f1f5a0012, negotiated timeout = 20000
+16/03/18 11:56:05 INFO zk.DefaultWatcherCallBack: Zookeeper state update::connected,:none,null
+16/03/18 11:56:05 INFO zookeeper.ZooKeeper: Session: 0x1538a1f1f5a0012 closed
+16/03/18 11:56:05 INFO imps.CuratorFrameworkImpl: Starting
+16/03/18 11:56:05 INFO zookeeper.ZooKeeper: Initiating client connection, connectString=master.mdrill.com:2181/usr/local/zookeeper-3.4.6 sessionTimeout=20000 watcher=com.netflix.curator.ConnectionState@794cb805
+16/03/18 11:56:05 INFO zookeeper.ClientCnxn: EventThread shut down
+16/03/18 11:56:05 INFO zookeeper.ClientCnxn: Opening socket connection to server master.mdrill.com/172.30.37.73:2181. Will not attempt to authenticate using SASL (unknown error)
+16/03/18 11:56:05 INFO zookeeper.ClientCnxn: Socket connection established to master.mdrill.com/172.30.37.73:2181, initiating session
+16/03/18 11:56:05 INFO zookeeper.ClientCnxn: Session establishment complete on server master.mdrill.com/172.30.37.73:2181, sessionid = 0x1538a1f1f5a0013, negotiated timeout = 20000
+
+
+
+
+
+[root@master bin]# ./bluewhale mdrill create ./create_rpt_p4padhoc_product.sql
+higo execute [create, ./create_rpt_p4padhoc_product.sql]
+
+<field name="thedate" type="string" indexed="true" stored="false"  omitTermFreqAndPositions="true" />
+<field name="name" type="string" indexed="true" stored="false"  omitTermFreqAndPositions="true" />
+<field name="email" type="string" indexed="true" stored="false"  omitTermFreqAndPositions="true" />
+<field name="is_p4pvip" type="string" indexed="true" stored="false"  omitTermFreqAndPositions="true" />
+
+create succ at /mdrill/tablelist/rpt_p4padhoc_product
+
+
+
+[root@master bin]# ./bluewhale mdrill index rpt_p4padhoc_product /mdrill/rpt_p4padhoc_product 3650 20140306 txt tab
+higo execute [index, rpt_p4padhoc_product, /mdrill/rpt_p4padhoc_product, 3650, 20140306, txt, tab]
+11111111 vertify:>>>last>>>>>current>>partionV20140628@001@201403@1@1@-1950960726@176@1@20160318_115408_160@20160318_115408_160<<<<
+22222  vertify:201403>>>partionV20140628@001@201403@1@1@-1950960726@176@1@20160318_115408_160@20160318_115408_160<<<<
+333333 vertify:201403>>>partionV20140628@001@201403@1@1@-1950960726@176@1@20160318_115408_160@20160318_115408_160>>>partionV20140628@001@201403@1@1@-1950960726@176@1@20160318_115408_160@20160318_115408_160>>>><<<<
+tmpjars:/usr/local/alimama/adhoc-core/lib/adhoc-solr-0.18-beta.jar,/usr/local/alimama/adhoc-core/lib/commons-io-1.4.jar,/usr/local/alimama/adhoc-core/lib/commons-httpclient-3.0.1.jar,/usr/local/alimama/adhoc-core/lib/adhoc-public-0.18-beta.jar,/usr/local/alimama/adhoc-core/lib/adhoc-wrapper-0.18-beta.jar,/usr/local/alimama/adhoc-core/lib/slf4j-api-1.5.6.jar@@@@@file:/usr/local/alimama/adhoc-core/lib/adhoc-solr-0.18-beta.jar,file:/usr/local/alimama/adhoc-core/lib/commons-io-1.4.jar,file:/usr/local/alimama/adhoc-core/lib/commons-httpclient-3.0.1.jar,file:/usr/local/alimama/adhoc-core/lib/adhoc-public-0.18-beta.jar,file:/usr/local/alimama/adhoc-core/lib/adhoc-wrapper-0.18-beta.jar,file:/usr/local/alimama/adhoc-core/lib/slf4j-api-1.5.6.jar
+/mdrill/rpt_p4padhoc_product/*20140306*/*
+output:/mdrill/tablelist/rpt_p4padhoc_product/tmp/42b38516-a4ce-4ff3-871c-0a398e61298c/201403@/mdrill/tablelist/rpt_p4padhoc_product/tmp*201403
+tmp:/mdrill/tablelist/rpt_p4padhoc_product/tmp/42b38516-a4ce-4ff3-871c-0a398e61298c/201403_smallIndex
+thedate string true false
+name string true false
+email string true false
+is_p4pvip string true false
+higo_uuid tlong true true
+16/03/18 11:59:21 INFO input.FileInputFormat: Total input paths to process : 1
+16/03/18 11:59:22 INFO mapred.JobClient: Running job: job_201603181149_0001
+16/03/18 11:59:23 INFO mapred.JobClient:  map 0% reduce 0%
+16/03/18 11:59:39 INFO mapred.JobClient:  map 100% reduce 0%
+16/03/18 11:59:51 INFO mapred.JobClient:  map 100% reduce 50%
+16/03/18 11:59:54 INFO mapred.JobClient:  map 100% reduce 100%
+16/03/18 11:59:56 INFO mapred.JobClient: Job complete: job_201603181149_0001
+16/03/18 11:59:56 INFO mapred.JobClient: Counters: 21
+16/03/18 11:59:56 INFO mapred.JobClient:   Map-Reduce Framework
+16/03/18 11:59:56 INFO mapred.JobClient:     Combine output records=0
+16/03/18 11:59:56 INFO mapred.JobClient:     Spilled Records=8
+16/03/18 11:59:56 INFO mapred.JobClient:     Reduce input records=4
+16/03/18 11:59:56 INFO mapred.JobClient:     Reduce output records=2
+16/03/18 11:59:56 INFO mapred.JobClient:     Map input records=4
+16/03/18 11:59:56 INFO mapred.JobClient:     Map output records=4
+16/03/18 11:59:56 INFO mapred.JobClient:     Map output bytes=280
+16/03/18 11:59:56 INFO mapred.JobClient:     Reduce shuffle bytes=150
+16/03/18 11:59:56 INFO mapred.JobClient:     Combine input records=0
+16/03/18 11:59:56 INFO mapred.JobClient:     Reduce input groups=4
+16/03/18 11:59:56 INFO mapred.JobClient:   higo
+16/03/18 11:59:56 INFO mapred.JobClient:     totalrecord=4
+16/03/18 11:59:56 INFO mapred.JobClient:     dumpcount=0
+16/03/18 11:59:56 INFO mapred.JobClient:     docCount=4
+16/03/18 11:59:56 INFO mapred.JobClient:     dayrecord_20140306=4
+16/03/18 11:59:56 INFO mapred.JobClient:   FileSystemCounters
+16/03/18 11:59:56 INFO mapred.JobClient:     HDFS_BYTES_READ=176
+16/03/18 11:59:56 INFO mapred.JobClient:     FILE_BYTES_WRITTEN=2126
+16/03/18 11:59:56 INFO mapred.JobClient:     FILE_BYTES_READ=2420
+16/03/18 11:59:56 INFO mapred.JobClient:     HDFS_BYTES_WRITTEN=1530
+16/03/18 11:59:56 INFO mapred.JobClient:   Job Counters
+16/03/18 11:59:56 INFO mapred.JobClient:     Launched map tasks=1
+16/03/18 11:59:56 INFO mapred.JobClient:     Launched reduce tasks=2
+16/03/18 11:59:56 INFO mapred.JobClient:     Data-local map tasks=1
+tmpjars:/usr/local/alimama/adhoc-core/lib/adhoc-solr-0.18-beta.jar,/usr/local/alimama/adhoc-core/lib/commons-io-1.4.jar,/usr/local/alimama/adhoc-core/lib/commons-httpclient-3.0.1.jar,/usr/local/alimama/adhoc-core/lib/adhoc-public-0.18-beta.jar,/usr/local/alimama/adhoc-core/lib/adhoc-wrapper-0.18-beta.jar,/usr/local/alimama/adhoc-core/lib/slf4j-api-1.5.6.jar@@@@@file:/usr/local/alimama/adhoc-core/lib/adhoc-solr-0.18-beta.jar,file:/usr/local/alimama/adhoc-core/lib/commons-io-1.4.jar,file:/usr/local/alimama/adhoc-core/lib/commons-httpclient-3.0.1.jar,file:/usr/local/alimama/adhoc-core/lib/adhoc-public-0.18-beta.jar,file:/usr/local/alimama/adhoc-core/lib/adhoc-wrapper-0.18-beta.jar,file:/usr/local/alimama/adhoc-core/lib/slf4j-api-1.5.6.jar
+16/03/18 11:59:56 INFO input.FileInputFormat: Total input paths to process : 2
+16/03/18 11:59:56 INFO mapred.JobClient: Running job: job_201603181149_0002
+16/03/18 11:59:57 INFO mapred.JobClient:  map 0% reduce 0%
+16/03/18 12:00:15 INFO mapred.JobClient:  map 100% reduce 0%
+16/03/18 12:00:27 INFO mapred.JobClient:  map 100% reduce 100%
+16/03/18 12:00:29 INFO mapred.JobClient: Job complete: job_201603181149_0002
+16/03/18 12:00:29 INFO mapred.JobClient: Counters: 17
+16/03/18 12:00:29 INFO mapred.JobClient:   Map-Reduce Framework
+16/03/18 12:00:29 INFO mapred.JobClient:     Combine output records=0
+16/03/18 12:00:29 INFO mapred.JobClient:     Spilled Records=4
+16/03/18 12:00:29 INFO mapred.JobClient:     Reduce input records=2
+16/03/18 12:00:29 INFO mapred.JobClient:     Reduce output records=2
+16/03/18 12:00:29 INFO mapred.JobClient:     Map input records=2
+16/03/18 12:00:29 INFO mapred.JobClient:     Map output records=2
+16/03/18 12:00:29 INFO mapred.JobClient:     Map output bytes=226
+16/03/18 12:00:29 INFO mapred.JobClient:     Reduce shuffle bytes=242
+16/03/18 12:00:29 INFO mapred.JobClient:     Combine input records=0
+16/03/18 12:00:29 INFO mapred.JobClient:     Reduce input groups=2
+16/03/18 12:00:29 INFO mapred.JobClient:   FileSystemCounters
+16/03/18 12:00:29 INFO mapred.JobClient:     HDFS_BYTES_READ=3791
+16/03/18 12:00:29 INFO mapred.JobClient:     FILE_BYTES_WRITTEN=542
+16/03/18 12:00:29 INFO mapred.JobClient:     FILE_BYTES_READ=236
+16/03/18 12:00:29 INFO mapred.JobClient:     HDFS_BYTES_WRITTEN=4363
+16/03/18 12:00:29 INFO mapred.JobClient:   Job Counters
+16/03/18 12:00:29 INFO mapred.JobClient:     Launched map tasks=2
+16/03/18 12:00:29 INFO mapred.JobClient:     Launched reduce tasks=1
+16/03/18 12:00:29 INFO mapred.JobClient:     Data-local map tasks=2
+44444 vertify:201403>>>partionV20140628@001@201403@1@1@-1950960726@176@1@20160318_115408_160@20160318_115408_160<<<partionV20140628@001@201403@1@1@-1950960726@176@1@20160318_115408_160@20160318_115408_160<<<<
+11111111 vertify:>>>last>>>partionV20140628@001@201403@1@1@-1950960726@176@1@20160318_115408_160@20160318_115408_160>>current>>partionV20140628@001@201403@1@1@-1950960726@176@1@20160318_115408_160@20160318_115408_160<<<<
