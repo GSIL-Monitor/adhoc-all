@@ -203,6 +203,8 @@ scp java-1.6.0-openjdk-devel-1.6.0.0-1.57.1.11.9.el6_4.x86_64.rpm  root@192.168.
 scp 002.txt  root@172.30.37.112:/usr/local/alimama/adhoc-core
 
 
+scp -r root@172.30.37.73:/usr/local/hadoop-0.20.2/conf ./
+
 rpm -i example.rpm 安装 example.rpm 包；
 
 rpm -iv example.rpm 安装 example.rpm 包并在安装过程中显示正在安装的文件信息；
