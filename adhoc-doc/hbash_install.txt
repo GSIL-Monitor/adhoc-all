@@ -1,0 +1,98 @@
+一、下载并安装
+http://mirror.bjtu.edu.cn/apache/hbase/hbase-0.94.27/
+https://repo1.maven.org/maven2/org/apache/hbase/hbase/0.90.5/
+scp hbase-0.90.5.tar.gz  root@172.30.39.0:/home/wuzhong
+tar -xzf hbase-0.90.5.tar.gz -C /usr/local
+
+vim conf/hbase-env.sh
+export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.71-1.b15.el6_7.x86_64
+export HBASE_CLASSPATH=$HADOOP_HOME/conf
+export HBASE_MANAGES_ZK=false
+
+
+
+hbase-site.xml
+<configuration>
+    <property>
+        <name>hbase.rootdir</name>
+        <value>hdfs://master.mdrill.com:9000/hbase</value>
+    </property>
+    <property>
+        <name>hbase.cluster.distributed</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.quorum</name>
+        <value>master.mdrill.com</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.property.dataDir</name>
+        <value>/hbase</value>
+    </property>
+</configuration>
+
+
+二、处理问题
+cp /usr/local/hadoop-0.20.2/hadoop-0.20.2-core.jar /usr/local/hbase-0.90.5/lib
+rm -rf hadoop-core-0.20-append-r1056497.jar
+[root@master bin]# ./start-hbase.sh
+OpenJDK 64-Bit Server VM warning: Using incremental CMS is deprecated and will likely be removed in a future release
+starting master, logging to /usr/local/hbase-0.90.5/bin/../logs/hbase-root-master-master.mdrill.com.out
+OpenJDK 64-Bit Server VM warning: Using incremental CMS is deprecated and will likely be removed in a future release
+localhost: starting regionserver, logging to /usr/local/hbase-0.90.5/bin/../logs/hbase-root-regionserver-master.mdrill.com.out
+localhost: OpenJDK 64-Bit Server VM warning: Using incremental CMS is deprecated and will likely be removed in a future release
+localhost: Exception in thread "main" org.apache.hadoop.ipc.RPC$VersionMismatch: Protocol org.apache.hadoop.hdfs.protocol.ClientProtocol version mismatch. (client = 42, server = 41)
+localhost:      at org.apache.hadoop.ipc.RPC.getProxy(RPC.java:364)
+localhost:      at org.apache.hadoop.hdfs.DFSClient.createRPCNamenode(DFSClient.java:113)
+localhost:      at org.apache.hadoop.hdfs.DFSClient.<init>(DFSClient.java:215)
+localhost:      at org.apache.hadoop.hdfs.DFSClient.<init>(DFSClient.java:177)
+localhost:      at org.apache.hadoop.hdfs.DistributedFileSystem.initialize(DistributedFileSystem.java:82)
+localhost:      at org.apache.hadoop.fs.FileSystem.createFileSystem(FileSystem.java:1378)
+localhost:      at org.apache.hadoop.fs.FileSystem.access$200(FileSystem.java:66)
+localhost:      at org.apache.hadoop.fs.FileSystem$Cache.get(FileSystem.java:1390)
+
+三、启动Hbase
+start-hbase.sh
+
+
+四、hbase shell
+
+list
+
+create 'member','m_id','address','info'
+查看表描述
+describe 'member'
+scan浏览表中数据
+scan 'member'
+删除一个列族m_id：先将表disable（如果表中之前有数据的话，会把数据清空）
+disable 'member'
+is_enabled 'member'
+alter 'member',{NAME=>'m_id',METHOD=>'delete'}
+最后enable，否则不能进行其他操作
+enable 'member'
+
+put'member','scutshuxue','info:age','24';'info:birthday','1987-06-17';'info:company','alibaba'
+
+
+put'member','scutshuxue','info:age','24'
+
+put'member','scutshuxue','info:birthday','1987-06-17'
+
+put'member','scutshuxue','info:company','alibaba'
+
+put'member','scutshuxue','address:contry','china'
+
+put'member','scutshuxue','address:province','zhejiang'
+
+put'member','scutshuxue','address:city','hangzhou'
+
+
+http://blog.csdn.net/kky2010_110/article/details/12616137
+http://blog.csdn.net/scutshuxue/article/details/6988348
+
+五、WEB页面管理
+HMaster：http://master.mdrill.com:60010/master.jsp
+
+
+六、学习文档
+http://yankaycom-wordpress.stor.sinaapp.com/hbase/book.html?q=/wp-content/hbase/book.html

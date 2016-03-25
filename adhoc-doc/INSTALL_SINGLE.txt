@@ -1,7 +1,12 @@
 作者：范宜坚
-
+http://master.mdrill.com:50070/dfshealth.jsp
 注意：1.本文档针对的安装包只在64位CentOS 6.3操作系统测试通过！
       2.更加系统的安装方法，请看https://github.com/alibaba/mdrill
+
+/mdrill/tablelist/rpt_p4padhoc_product/ /mdrill/rpt_p4padhoc_product/ dt=20140306  /mdrill/rpt_p4padhoc_product/clear/out /mdrill/rpt_p4padhoc_product/clear/index tab "thedate,name,email,is_p4pvip"
+
+java -jar adhoc-mdrill-0.18-beta.jar com.alipay.higo.hadoop.job.MakeIndex /mdrill/tablelist/rpt_p4padhoc_product/ /mdrill/rpt_p4padhoc_product/ dt=20
+140306  /mdrill/rpt_p4padhoc_product/clear/out /mdrill/rpt_p4padhoc_product/clear/index tab "thedate,name,email,is_p4pvip"
 
 1.配置操作系统
 1.1 # vi /etc/sysconfig/network
@@ -116,6 +121,8 @@ source /home/mdrill/.bashrc
     hadoop fs -ls  /mdrill/tablelist/rpt_p4padhoc_product/index
 
     ./bluewhale mdrill drop rpt_p4padhoc_product
+
+    ./bluewhale  jar  ./mdrill.jar  com.alimama.mdrillImport.Topology  rpttopology rpt_p4padhoc_product 2 512 1000 201403052005
 3. 导入离线数据
     # hadoop fs -mkdir /group/tbads/p4pdata/hive_data/rpt/rpt_p4padhoc_product/dt=20140306
     # hadoop fs -put /usr/local/src/001.txt /group/tbads/p4pdata/hive_data/rpt/rpt_p4padhoc_product/dt=20140306/001.txt
@@ -197,13 +204,15 @@ source /home/mdrill/.bashrc
 
 scp helloworld.jar  root@172.30.37.112:/home/wuzhong/helloworld.jar
 
-scp java-1.6.0-openjdk-devel-1.6.0.0-1.57.1.11.9.el6_4.x86_64.rpm  root@192.168.18.128:/home/wuzhong
+scp hbase-0.98.17-hadoop1-bin.tar.gz  root@172.30.36.18:/home/wuzhong
 
 
 scp 002.txt  root@172.30.37.112:/usr/local/alimama/adhoc-core
 
 
 scp -r root@172.30.37.73:/usr/local/hadoop-0.20.2/conf ./
+
+scp root@172.30.37.73:/usr/local/alimama/adhoc-core/conf/storm.yaml ./
 
 rpm -i example.rpm 安装 example.rpm 包；
 
@@ -222,6 +231,8 @@ make install
 
 
 tar -xzf alimama-adhoc.tar.gz -C /usr/local
+
+tar -xzf hbase-0.98.17-hadoop1-bin.tar.gz -C /usr/local
 
 
 hadoop dfsadmin -safemode leave
@@ -362,3 +373,42 @@ tmpjars:/usr/local/alimama/adhoc-core/lib/adhoc-solr-0.18-beta.jar,/usr/local/al
 16/03/18 12:00:29 INFO mapred.JobClient:     Data-local map tasks=2
 44444 vertify:201403>>>partionV20140628@001@201403@1@1@-1950960726@176@1@20160318_115408_160@20160318_115408_160<<<partionV20140628@001@201403@1@1@-1950960726@176@1@20160318_115408_160@20160318_115408_160<<<<
 11111111 vertify:>>>last>>>partionV20140628@001@201403@1@1@-1950960726@176@1@20160318_115408_160@20160318_115408_160>>current>>partionV20140628@001@201403@1@1@-1950960726@176@1@20160318_115408_160@20160318_115408_160<<<<
+
+
+
+[root@master bin]# ./bluewhale mdrill table rpt_p4padhoc_product
+higo execute [table, rpt_p4padhoc_product]
+16/03/19 15:32:38 INFO imps.CuratorFrameworkImpl: Starting
+16/03/19 15:32:38 INFO zookeeper.ZooKeeper: Client environment:zookeeper.version=3.4.5-1392090, built on 09/30/2012 17:52 GMT
+16/03/19 15:32:38 INFO zookeeper.ZooKeeper: Client environment:host.name=master.mdrill.com
+16/03/19 15:32:38 INFO zookeeper.ZooKeeper: Client environment:java.version=1.8.0_71
+16/03/19 15:32:38 INFO zookeeper.ZooKeeper: Client environment:java.vendor=Oracle Corporation
+16/03/19 15:32:38 INFO zookeeper.ZooKeeper: Client environment:java.home=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.71-1.b15.el6_7.x86_64/jre
+16/03/19 15:32:38 INFO zookeeper.ZooKeeper: Client environment:java.class.path=/usr/local/alimama/adhoc-core/lib/jasper-runtime-5.5.23.jar:/usr/local/alimama/adhoc-core/lib/adhoc-web-0.18-beta.jar:/usr/local/alimama/adhoc-core/lib/solr-commons-csv-3.5.0.jar:/usr/local/alimama/adhoc-core/lib/hiccup-0.3.6.jar:/usr/local/alimama/adhoc-core/lib/avro-ipc-1.5.0.jar:/usr/local/alimama/adhoc-core/lib/jline-0.9.94.jar:/usr/local/alimama/adhoc-core/lib/commons-lang-2.4.jar:/usr/local/alimama/adhoc-core/lib/slf4j-api-1.5.6.jar:/usr/local/alimama/adhoc-core/lib/jersey-core-1.8.jar:/usr/local/alimama/adhoc-core/lib/jsp-api-2.1-glassfish-2.1.v20091210.jar:/usr/local/alimama/adhoc-core/lib/velocity-1.6.4.jar:/usr/local/alimama/adhoc-core/lib/commons-httpclient-3.0.1.jar:/usr/local/alimama/adhoc-core/lib/adhoc-mdrill-0.18-beta.jar:/usr/local/alimama/adhoc-core/lib/jasper-compiler-5.5.23.jar:/usr/local/alimama/adhoc-core/lib/metrics-core-2.1.2.jar:/usr/local/alimama/adhoc-core/lib/jsp-api-2.1.jar:/usr/local/alimama/adhoc-core/lib/commons-fileupload-1.2.1.jar:/usr/local/alimama/adhoc-core/lib/paranamer-2.3.jar:/usr/local/alimama/adhoc-core/lib/hamcrest-core-1.1.jar:/usr/local/alimama/adhoc-core/lib/jackson-mapper-asl-1.8.8.jar:/usr/local/alimama/adhoc-core/lib/standard-1.1.2.jar:/usr/local/alimama/adhoc-core/lib/curator-client-1.1.3.jar:/usr/local/alimama/adhoc-core/lib/tools.macro-0.1.0.jar:/usr/local/alimama/adhoc-core/lib/jamon-runtime-2.3.1.jar:/usr/local/alimama/adhoc-core/lib/jruby-complete-1.6.5.jar:/usr/local/alimama/adhoc-core/lib/libthrift7-0.7.0.jar:/usr/local/alimama/adhoc-core/lib/adhoc-public-0.18-beta.jar:/usr/local/alimama/adhoc-core/lib/asm-3.2.jar:/usr/local/alimama/adhoc-core/lib/avro-1.5.0.jar:/usr/local/alimama/adhoc-core/lib/jsp-2.1-jetty-6.1.26.jar:/usr/local/alimama/adhoc-core/lib/jackson-core-asl-1.8.8.jar:/usr/local/alimama/adhoc-core/lib/activation-1.1.jar:/usr/local/alimama/adhoc-core/lib/jetty-java5-threadpool-6.1.26.jar:/usr/local/alimama/adhoc-core/lib/guava-15.0.jar:/usr/local/alimama/adhoc-core/lib/mysql-connector-java-5.1.9.jar:/usr/local/alimama/adhoc-core/lib/adhoc-realtime-0.18-beta.jar:/usr/local/alimama/adhoc-core/lib/cglib-nodep-2.1_3.jar:/usr/local/alimama/adhoc-core/lib/clojure-1.2.0.jar:/usr/local/alimama/adhoc-core/lib/commons-digester-1.8.jar:/usr/local/alimama/adhoc-core/lib/adhoc-jdbc-0.18-beta.jar:/usr/local/alimama/adhoc-core/lib/minlog-1.2.jar:/usr/local/alimama/adhoc-core/lib/commons-beanutils-1.7.0.jar:/usr/local/alimama/adhoc-core/lib/zookeeper-3.4.5.jar:/usr/local/alimama/adhoc-core/lib/hbase-0.94.15-cdh4.6.0.jar:/usr/local/alimama/adhoc-core/lib/curator-framework-1.1.3.jar:/usr/local/alimama/adhoc-core/lib/jackson-xc-1.8.8.jar:/usr/local/alimama/adhoc-core/lib/commons-el-1.0.jar:/usr/local/alimama/adhoc-core/lib/commons-io-1.4.jar:/usr/local/alimama/adhoc-core/lib/libthrift-0.7.0.jar:/usr/local/alimama/adhoc-core/lib/json-simple-1.1.jar:/usr/local/alimama/adhoc-core/lib/clout-0.4.1.jar:/usr/local/alimama/adhoc-core/lib/jsf-impl-2.1.7.jar:/usr/local/alimama/adhoc-core/lib/servlet-api-2.5.jar:/usr/local/alimama/adhoc-core/lib/protobuf-java-2.4.0a.jar:/usr/local/alimama/adhoc-core/lib/commons-beanutils-core-1.8.0.jar:/usr/local/alimama/adhoc-core/lib/oro-2.0.8.jar:/usr/local/alimama/adhoc-core/lib/httpclient-4.1.1.jar:/usr/local/alimama/adhoc-core/lib/reflectasm-1.01.jar:/usr/local/alimama/adhoc-core/lib/adhoc-solr-0.18-beta.jar:/usr/local/alimama/adhoc-core/lib/netty-3.2.4.Final.jar:/usr/local/alimama/adhoc-core/lib/commons-cli-1.1.jar:/usr/local/alimama/adhoc-core/lib/jackson-jaxrs-1.8.8.jar:/usr/local/alimama/adhoc-core/lib/commons-collections-3.2.1.jar:/usr/local/alimama/adhoc-core/lib/jetty-util-6.1.26.jar:/usr/local/alimama/adhoc-core/lib/jettison-1.1.jar:/usr/local/alimama/adhoc-core/lib/hadoop-core-0.20.2.jar:/usr/local/alimama/adhoc-core/lib/slf4j-log4j12-1.5.6.jar:/usr/local/alimama/adhoc-core/lib/commons-codec-1.5.jar:/usr/local/alimama/adhoc-core/lib/jstl-1.1.2.jar:/usr/local/alimama/adhoc-core/lib/jaxb-impl-2.2.3-1.jar:/usr/local/alimama/adhoc-core/lib/adhoc-core-0.18-beta.jar:/usr/local/alimama/adhoc-core/lib/log4j-1.2.16.jar:/usr/local/alimama/adhoc-core/lib/httpcore-4.1.jar:/usr/local/alimama/adhoc-core/lib/commons-logging-1.1.1.jar:/usr/local/alimama/adhoc-core/lib/jetty-6.1.26.jar:/usr/local/alimama/adhoc-core/lib/carbonite-1.0.0.jar:/usr/local/alimama/adhoc-core/lib/adhoc-wrapper-0.18-beta.jar:/usr/local/alimama/adhoc-core/lib/ant-1.6.5.jar:/usr/local/alimama/adhoc-core/lib/jaxb-api-2.1.jar:/usr/local/alimama/adhoc-core/lib/netty-3.6.6.Final.jar:/usr/local/alimama/adhoc-core/lib/commons-exec-1.1.jar:/usr/local/alimama/adhoc-core/lib/compojure-0.6.4.jar:/usr/local/alimama/adhoc-core/lib/servlet-api-2.5-6.1.14.jar:/usr/local/alimama/adhoc-core/lib/stax-api-1.0.1.jar:/usr/local/alimama/adhoc-core/lib/junit-4.10.jar:/usr/local/alimama/adhoc-core/lib/jsp-api-2.1-6.1.11.jar:/usr/local/alimama/adhoc-core/lib/servlet-api-2.5-20081211.jar:/usr/local/alimama/adhoc-core/lib/core-3.1.1.jar:/usr/local/alimama/adhoc-core/lib/high-scale-lib-1.1.1.jar:/usr/local/alimama/adhoc-core/lib/jersey-server-1.8.jar:/usr/local/alimama/adhoc-core/lib/jsf-api-2.1.7.jar:/usr/local/alimama/adhoc-core/lib/ring-core-0.3.10.jar:/usr/local/alimama/adhoc-core/lib/snakeyaml-1.9.jar:/usr/local/alimama/adhoc-core/lib/jersey-json-1.8.jar:/usr/local/alimama/adhoc-core/lib/commons-configuration-1.6.jar:/usr/local/alimama/adhoc-core/lib/core.incubator-0.1.0.jar:/usr/local/alimama/adhoc-core/lib/jsp-2.1-6.1.11.jar:/usr/local/alimama/adhoc-core/lib/jsp-2.1-glassfish-2.1.v20091210.jar:/usr/local/alimama/adhoc-core/lib/jzmq-2.1.0.jar:/usr/local/alimama/adhoc-core/lib/kryo-1.04.jar:/usr/local/alimama/adhoc-core/lib/ganymed-ssh2-build210.jar:/usr/local/alimama/adhoc-core/bin/mdrill.jar:/usr/local/alimama/adhoc-core/conf:/usr/local/alimama/adhoc-core/bin
+16/03/19 15:32:38 INFO zookeeper.ZooKeeper: Client environment:java.library.path=/usr/local/lib:/opt/local/lib:/usr/lib
+16/03/19 15:32:38 INFO zookeeper.ZooKeeper: Client environment:java.io.tmpdir=/tmp
+16/03/19 15:32:38 INFO zookeeper.ZooKeeper: Client environment:java.compiler=<NA>
+16/03/19 15:32:38 INFO zookeeper.ZooKeeper: Client environment:os.name=Linux
+16/03/19 15:32:38 INFO zookeeper.ZooKeeper: Client environment:os.arch=amd64
+16/03/19 15:32:38 INFO zookeeper.ZooKeeper: Client environment:os.version=2.6.32-279.el6.x86_64
+16/03/19 15:32:38 INFO zookeeper.ZooKeeper: Client environment:user.name=root
+16/03/19 15:32:38 INFO zookeeper.ZooKeeper: Client environment:user.home=/root
+16/03/19 15:32:38 INFO zookeeper.ZooKeeper: Client environment:user.dir=/usr/local/alimama/adhoc-core/bin
+16/03/19 15:32:38 INFO zookeeper.ZooKeeper: Initiating client connection, connectString=master.mdrill.com:2181 sessionTimeout=20000 watcher=com.netflix.curator.ConnectionState@8e24743
+16/03/19 15:32:38 INFO zookeeper.ClientCnxn: Opening socket connection to server master.mdrill.com/172.30.37.73:2181. Will not attempt to authenticate using SASL (unknown error)
+16/03/19 15:32:38 INFO zookeeper.ClientCnxn: Socket connection established to master.mdrill.com/172.30.37.73:2181, initiating session
+16/03/19 15:32:38 INFO zookeeper.ClientCnxn: Session establishment complete on server master.mdrill.com/172.30.37.73:2181, sessionid = 0x1538f46a5b6001a, negotiated timeout = 20000
+16/03/19 15:32:38 INFO zk.DefaultWatcherCallBack: Zookeeper state update::connected,:none,null
+16/03/19 15:32:38 INFO zookeeper.ZooKeeper: Session: 0x1538f46a5b6001a closed
+16/03/19 15:32:38 INFO zookeeper.ClientCnxn: EventThread shut down
+16/03/19 15:32:38 INFO imps.CuratorFrameworkImpl: Starting
+16/03/19 15:32:38 INFO zookeeper.ZooKeeper: Initiating client connection, connectString=master.mdrill.com:2181/usr/local/zookeeper-3.4.6 sessionTimeout=20000 watcher=com.netflix.curator.ConnectionState@10d59286
+16/03/19 15:32:38 INFO zookeeper.ClientCnxn: Opening socket connection to server master.mdrill.com/172.30.37.73:2181. Will not attempt to authenticate using SASL (unknown error)
+16/03/19 15:32:38 INFO zookeeper.ClientCnxn: Socket connection established to master.mdrill.com/172.30.37.73:2181, initiating session
+16/03/19 15:32:38 INFO zookeeper.ClientCnxn: Session establishment complete on server master.mdrill.com/172.30.37.73:2181, sessionid = 0x1538f46a5b6001b, negotiated timeout = 20000
+16/03/19 15:32:38 INFO storm.StormSubmitter: Jar not uploaded to master yet. Submitting jar...
+16/03/19 15:32:38 INFO storm.StormSubmitter: Uploading topology jar /usr/local/alimama/adhoc-core/bin/mdrill.jar to assigned location: /data/storm/nimbus/inbox/stormjar-b78d685f-3e9e-4175-b5da-cacb50bb3eaa.jar
+16/03/19 15:32:38 INFO storm.StormSubmitter: Successfully uploaded topology jar to assigned location: /data/storm/nimbus/inbox/stormjar-b78d685f-3e9e-4175-b5da-cacb50bb3eaa.jar
+16/03/19 15:32:38 INFO storm.StormSubmitter: Submitting topology adhoc in distributed mode with conf {"mdrill.task.assignment":["####看到这里估计大家都会晕，但是这个是任务调度很重要的地方，出去透透气，回来搞定这里吧####","####注解：merge表示是merger server;shard@0表示是shard的第0个冗余，__acker与heartbeat是内部线程，占用资源很小####","####下面为初始分布，用于同一台机器之间没有宕机的调度####","####切记，一个端口只能分配一个shard，千万不要将merge与shard或shard与shard分配到同一个端口里，这会引起计算数据的不准确的####","merge:0&shard@0:0;master.mdrill.com:6601,6701;6602,6711;6603,6721","__acker:0;master.mdrill.com:6601;6602;6603","heartbeat:0;master.mdrill.com:6601;6602;6603","merge:0;master.mdrill.com:6601;6602;6603"],"topology.workers":2,"topology.ackers":0,"mdrill.task.ports":"6901~6902","topology.assignment.custom":"com.alimama.mdrill.topology.MdrillDefaultTaskAssignment"}
+16/03/19 15:32:38 INFO storm.StormSubmitter: Finished submitting topology: adhoc
+start complete

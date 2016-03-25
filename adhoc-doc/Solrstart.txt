@@ -1,0 +1,26 @@
+
+
+SolrStart
+ 		ShardPartion.base=solrhomeBase;
+ 		ShardPartion.taskIndex=taskIndex;
+ 		ShardPartion.index=IndexUtils.getHdfsForder(taskIndex);
+        public static Path getHdfsRealtimePath(String tablename,String partion)
+        {
+            Path rtn=new Path(base+"/"+tablename+"/index/"+partion,index);
+            return rtn;
+        }
+        HDFS的索引路径获取方法
+
+SolrStartJetty
+       启动solr的web服务，并把服务的ip + port等信息主车道zookeper
+       从HDFS同步/data/mdrill/higo/adhoc/shard_0_0/solr
+
+SolrStartTable
+       从HDFS同步/data/mdrill/higo/adhoc/shard_0_0/tablelist/rpt_p4padhoc_product/solr
+       MergeServer 不需要同步服务
+
+select thedate,name from  rpt_p4padhoc_product where thedate='20140306'
+       insert into rpt_p4padhoc_product(thedate,name,email,is_p4pvip) values ('20140307','name','email','is_p4pvip')
+
+
+   http://172.30.36.18:51211/solr/rpt_p4padhoc_product/select/?showlog=1&shards=172.30.36.18%3A51110%2Fsolr%2Frpt_p4padhoc_product%40_mdrillshard_%2C&shards.partions=201403&mlogtime=20160320063621&maxshards=64&mergeservers=172.30.36.18%3A51211%2Fsolr%2Frpt_p4padhoc_product%2C172.30.36.18%3A51211%2Fsolr%2Frpt_p4padhoc_product%2C172.30.36.18%3A51211%2Fsolr%2Frpt_p4padhoc_product%2C172.30.36.18%3A51211%2Fsolr%2Frpt_p4padhoc_product%2C172.30.36.18%3A51211%2Fsolr%2Frpt_p4padhoc_product%2C172.30.36.18%3A51211%2Fsolr%2Frpt_p4padhoc_product%2C172.30.36.18%3A51211%2Fsolr%2Frpt_p4padhoc_product%2C172.30.36.18%3A51211%2Fsolr%2Frpt_p4padhoc_product%2C172.30.36.18%3A51211%2Fsolr%2Frpt_p4padhoc_product%2C172.30.36.18%3A51211%2Fsolr%2Frpt_p4padhoc_product%2C&start=0&rows=0&fq=thedate%3A%2820140306+OR+20140307%29&q=*%3A*&facet=true&facet.sort=index&facet.cross.isdetail=true&facet.cross=true&facet.cross.join=%40&facet.cross.offset=0&facet.cross.limit=20&fetchfdt=false&facet.field=thedate&facet.field=name&facet.cross.sort.desc=true&facet.cross.sort.fl=higoempty_count_s&facet.cross.sort.cp=tdouble
