@@ -1,1 +1,3 @@
 http://www.lilyproject.org/lily/index.html
+
+https://github.com/NGDATA/lilyproject.git
